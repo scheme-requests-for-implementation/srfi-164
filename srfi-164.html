@@ -1,7 +1,7 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
   <head>
-    <title>Enhanced multi-dimensional Arrays</title>
+    <title>SRFI 164: Enhanced multi-dimensional Arrays</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="stylesheet" href="/srfi.css" type="text/css" />
     <link href="/favicon.png" rel="icon" sizes="192x192" type="image/png" />
@@ -21,8 +21,8 @@
   span.proc-def { font-weight: bold }
   code.function { font-weight: bold }
   p.synopsis { background-color: #DCffDC }
-  p { margin: 0.5ex } 
-  blockquote { margin-top: 0.5ex } 
+  p { margin: 0.5ex }
+  blockquote { margin-top: 0.5ex }
 </style>
   </head>
 
@@ -36,11 +36,19 @@ Enhanced multi-dimensional Arrays
 Per Bothner
 
 <h1>Status</h1>
+
+<p>This SRFI is currently in <em>draft</em> status.  Here is <a href="https://srfi.schemers.org/srfi-process.html">an explanation</a> of each status that a SRFI can hold.  To provide input on this SRFI, please send email to <code><a href="mailto:srfi+minus+164+at+srfi+dotschemers+dot+org">srfi-164@<span class="antispam">nospam</span>srfi.schemers.org</a></code>.  To subscribe to the list, follow <a href="https://srfi.schemers.org/srfi-list-subscribe.html">these instructions</a>.  You can access previous messages via the mailing list <a href="https://srfi-email.schemers.org/srfi-164">archive</a>.</p>
+<ul>
+  <li>Received: 2018/11/2</li>
+  <li>60-day deadline: 2019/1/1</li>
+  <li>Draft #1 published: 2018/11/2</li>
+</ul>
+
 <h1>Abstract</h1>
-<p>This describe the array data type (a generalization of vectors
+<p>This SRFI describes the array data type (a generalization of vectors
 to multiple indexes or dimensions), along with a set of procedures
 for working on them.
-<p>This specifiation is an extension of <a class="ulink" href="http://srfi.schemers.org/srfi-25/srfi-25.html" target="_top">SRFI 25</a>,
+<p>This specification is an extension of <a class="ulink" href="http://srfi.schemers.org/srfi-25/srfi-25.html" target="_top">SRFI 25</a>,
 with additions from Racket’s
 <a class="ulink" href="https://docs.racket-lang.org/math/array.html" target="_top">math.array</a> package
 and other sources.
@@ -48,29 +56,34 @@ It has been implemented in the
 <a href="https://www.gnu.org/software/kawa/Arrays.html">Kawa dialect of Scheme</a>.
 
 <h1>Issues</h1>
-<p>
-The range API is new and untested.  Some changes (including functions names) may amke sense.
+<ul>
+<li>
+The Rationale section is empty.
+<li>
+The Acknowledgements section is empty.
+<li>
+The range API is new and untested.  Some changes (including functions names) may not make sense.
 It may make sense to move it into a separate SRFI.
-<p>
-Right now we have shape-specifiers, and the SRFI-4 <code>shape</code>
+<li>
+Right now we have shape-specifiers, and the SRFI 4 <code>shape</code>
 procedure, which creates one kind of shape-specifier.
 However, there is no <code>array-shape</code> procedure to
 return a shape as a single object.
-Instead, there is the <code>array-rank</code>,
+Instead, there are the <code>array-rank</code>,
 <code>array-start</code>, and <code>array-end</code> procedures
 to <q>inspect</q> the shape.  Is that enough?
 Should we have an explicit <q>shape</q> type?
-(This is essentially the <q>interval</q> type of SRFI-122.)
+(This is essentially the <q>interval</q> type of SRFI 122.)
 Should it be a distinct opaque type, or one of the shape specifier types?
-<p>
+<li>
 Any important missing procedures?
 It might be useful to have <code>array-copy</code>,
 though if we have <code>array-shape</code>
 then <code>(array-copy arr)</code> is trivially
 defined as <code>(array-reshape (array-flatten arr) (array-shape arr))</code>.
-<p>Need alternate non-Kawa way to expression pseudo-ranges.
-<p>Any other Kawa-isms that need to beremoved?
-<p>Describe implementation.
+<li>Need alternate non-Kawa way to expression pseudo-ranges.
+<li>Any other Kawa-isms that need to be removed?
+<li>Describe implementation.</ul>
 
 <h1>Rationale</h1>
 
@@ -84,8 +97,8 @@ is the rank or the number of dimensions of an array.
 <p>
 A <dfn>generalized vector</dfn> is a standard vector,
 but (depending on implementation) can also include uniform vectors,
-bytevectors, ranger, and strings (viewed as vectors of characters).
-Arrays are a extension of vectors:
+bytevectors, ranges, and strings (viewed as vectors of characters).
+Arrays are an extension of vectors:
 An array whose rank is 1, and where the (single) lower bound is 0
 is a (generalized) vector.
 A library-based implementation of this specification should use
@@ -95,7 +108,7 @@ for "simple" rank-1 zero-lower-bound arrays
 </p>
 <p>A rank-0 array has a single value.  It is essentially a box for that
 value.  Functions that require arrays may treat non-arrays
-as a rank-0 array containing that value.
+as rank-0 arrays containing that value.
 </p>
 <p>An array of rank 2 is frequently called a <em class="firstterm">matrix</em>.
 </p>
@@ -105,7 +118,7 @@ as a rank-0 array containing that value.
 The examples use the array literal syntax and <code>format-array</code> helper function
 of <a href="https://srfi.schemers.org/srfi-163/srfi-163.html">SRFI 163</a>
 for illustrative purposes.
-However, this specifcation does not require SRFI 163 (or vice versa),
+However, this specification does not require SRFI 163 (or vice versa),
 though they are designed to work well together.
 <p>
 <p class="synopsis" kind="Procedure"><code class="function">(array?</code> <var>obj</code></var>)</code></p>
@@ -117,39 +130,39 @@ Note this also returns true for a (generalized) vector.
 <h3 id="Ranges">Ranges</h3>
 <em>This should/could be moved out to a separate SRFI.</em>
 <p>
-A range has a lower bound, upper bound, and a step that defaults to 1.
-It is a new type of immutable generalized vector with an optimized compact representation.
+A range has a lower bound, an upper bound, and a step that defaults to 1.
+It is a new type of immutable generalized vector with an optimized, compact representation.
 <p>
-A <dfn>range</dfn> is an immutable sequence of values that increase <q>linearly</q> - i.e. by a fixed amount (the <dfn>step</dfn>)
+A <dfn>range</dfn> is an immutable sequence of values that increase <q>linearly,</q> i.e. by a fixed amount (the <dfn>step</dfn>)
 between each element.</p>
 <div kind="Procedure"><p class="synopsis"><code class="function">(range-from</code> <var>start</var> [<var>step</var>]<code>)</code><p>
 <blockquote class="blockquote"><p>Creates an <dfn>unbounded</dfn> or non-finite range, where <em>step</em> defaults to 1.
 The result is an infinite sequence of values, starting with <var>start</var>, and followed by
 <code class="literal">(+ <var>start</var> <var>step</var>)</code>,
 <code class="literal">(+ <var>start</var> (* 2 <var>step</var>))</code>, and so on.
-For example <code>(range-from 3 2)</code> is the odd integers starting at 3.</p></blockquote></div>
+For example, <code>(range-from 3 2)</code> is the odd integers starting at 3.</p></blockquote></div>
 <div kind="Procedure"><p class="synopsis" kind="Procedure"><code class="function">(range&lt;</code> <var>end</var> [<var>start</var> [<var>step</var>]]<code>)</code></p>
 <p class="synopsis" kind="Procedure"><code class="function">(range&lt;=</code> <var>end</var> [<var>start</var> [<var>step</var>]]<code>)</code></p>
 <blockquote><p>
-In these cases the sequence counts up: The <em class="replaceable">step</em> must be positive, and defaults to 1,
+In these cases, the sequence counts up: The <em class="replaceable">step</em> must be positive, and defaults to 1,
 while <em class="replaceable">start</em> defaults to 0.
-The resulting values is the initial subsequence of <code>(range-from <var>start</code> <var>step</var>)</code> as long as the value <var>x</var> satisfies <code class="literal">(&lt; <var>x</var> <var>end</var>)</code>,
+The resulting values are the initial subsequence of <code>(range-from <var>start</code> <var>step</var>)</code> as long as the value <var>x</var> satisfies <code class="literal">(&lt; <var>x</var> <var>end</var>)</code>,
 or <code class="literal">(&lt;= <var>x</var> <var>end</var>)</code>, respectively.
-<em>(Note: It might be more useful in the <code>range&lt;=</code> case for <em class="replaceable">start</em> defaults to 1,
+<em>(Note: It might be more useful in the <code>range&lt;=</code> case for <em class="replaceable">start</em> to default to 1,
 but consistency is probably more desirable.)</em>
 </p></blockquote></div>
 <div kind="Procedure">
 <p class="synopsis"><code class="function">(range&gt;</code> <var>end</var> <var>start</var> [<var>step</var>]<code>)</code><p>
 <p class="synopsis"><code class="function">(range&gt;=</code> <var>end</var> <var>start</var> [<var>step</var>]<code>)</code><p>
 <blockquote class="blockquote"><p>
-In these cases the sequence counts down: The <em class="replaceable"><code>step</code></em> must be negative, and defaults to -1.
+In these cases, the sequence counts down: The <em class="replaceable"><code>step</code></em> must be negative, and defaults to -1.
 The resulting values are those  <var>x</var> such that <code class="literal">(&gt; <var>x</var> <var>end</var>)</code>,
   or  <code class="literal">(&gt;= <em class="replaceable"><code>x</code></em> <em class="replaceable"><code>end</code></em>)</code>, respectively.
 <p/></blockquote>
 </div>
 <div kind="Procedure"><p class="synopsis" kind="Procedure"> <code class="function">(range-take</code> <var>count</var> [<var>start</var> [<var>step</var>]]<code>)</code></p>
 <blockquote><p>
-In this case the resulting range is the first <var>cunt</var> elements of the unbounded sequence.
+In this case, the resulting range is the first <var>count</var> elements of the unbounded sequence.
 The expression <code>(range-take <var>count</var> <var>start</var> <var>step</var>)</code>
 yields the same sequence as SRFI 1's <code>(iota <var>count</var> <var>start</var> <var>step</var>)</code>.
 </p></blockquote></div>
@@ -179,7 +192,7 @@ We use as example a 2*3 array with lower bounds 0, and a 3*4 array with lower bo
 Each integer <em class="replaceable"><code>e</code></em> is an upper bound,
 and is equivalent to the range <code class="literal">(range&lt; <var>e</var>)</code>.
 <p>
-Examples: <code>#(2 3)</code>, and the second is not expressible.    
+Examples: <code>#(2 3)</code>, and the second is not expressible.
 </p></li>
 <li class="listitem"><p>A vector of lists of length 2.
 The first element of each list is the lower bound, and the second is the upper bound.
@@ -188,16 +201,16 @@ The first element of each list is the lower bound, and the second is the upper b
 Examples: <code>#((0 2) (0 3))</code> and <code>#((1 3) (1 4))</code>.
 </p></li>
 <li class="listitem"><p>A vector of simple ranges, one for each
-dimension, all of who are
+dimension, all of which are
 bounded (finite), consist of integer values,
 and have a <em class="replaceable"><code>step</code></em> of 1.
 Each range, which is usually written as <code class="literal">(range&lt; <var>e</var> <var>b</var>)</code>
-or <code class="literal">(range&lt; <var>e</var>)</code>
+or <code class="literal">(range&lt; <var>e</var>)</code>,
     expresses the bounds of the corresponding dimension.
 <p>
 Examples: <code>(vector (range&lt; 2) (range&lt;= 2))</code> and <code>(vector (range&lt; 3 1) (range-take 4 1))</code>.
 <p>
-Using ranges without syntatic sugar can be a bit verbose.
+Using ranges without syntactic sugar can be a bit verbose.
 Using the Kawa syntactic sugar, the examples are: <code>[[0 &lt;: 2] [0 &lt;=: 2]]</code> and <code>[[1 &lt;: 3] [1 size: 4]]</code>.)
 </p></li>
 <li class="listitem"><p>A vector consisting of a mix of integers, length-2 lists, and ranges.
@@ -292,9 +305,8 @@ The array does not retain a reference to <em class="replaceable"><code>shape</co
 </blockquote></div>
 <p class="synopsis" kind="Procedure"><span class="kind">Procedure</span><span class="ignore">: </span><a class="indexterm" name="idm45251523782144"></a> <code class="function">build-array</code> <em class="replaceable"><code>shape</code></em> <em class="replaceable"><code>procedure</code></em></p>
 <div class="blockquote"><blockquote class="blockquote">
-<p>Construct a “virtual array” of the given <em class="replaceable"><code>shape</code></em>,
-which uses no storage for the elements.
-Instead, elements are calculated on-demand by calling <em class="replaceable"><code>procedure</code></em>,
+<p>Construct a “virtual array” of the given <em class="replaceable"><code>shape</code></em> that uses no storage for the elements.
+Instead, elements are calculated on demand by calling <em class="replaceable"><code>procedure</code></em>,
 which takes a single argument, an index vector.
 </p>
 <p>There is no caching or memoization.
@@ -467,7 +479,7 @@ along a dimension.  To select row 2 (1-origin):
 ║33║
 ╚══╝
 </pre>
-<p>To expand that column to 5 colums you can repeat the column index:
+<p>To expand that column to 5 columns you can repeat the column index:
 </p>
 <pre class="screen"><strong class="userinput"><code>(range-take 5 3 0)</code></strong>
 #(3 3 3 3 3)
@@ -485,13 +497,13 @@ along a dimension.  To select row 2 (1-origin):
 <div class="sect2">
 <div class="titlepage"><div><div><h3 class="title">
 <a name="Modifying-arrays"></a>Modifying arrays</h3></div></div></div>
-<p>An implementation that supports <a href="https://srfi.schemers.org/srfi-17/srfi-17.html">SRFI 17 (generalied <code>set!</code></a>,
+<p>An implementation that supports <a href="https://srfi.schemers.org/srfi-17/srfi-17.html">SRFI 17 (generalized <code>set!</code>)</a>
 should allow <code class="literal">set!</code> to modify one or multiple elements.
 To modify a single element:
 </p>
 <pre class="screen">(set! (<em class="replaceable"><code>arr</code></em> <em class="replaceable"><code>index</code></em> ...) <em class="replaceable"><code>new-value</code></em>)
 </pre>
-<p>should be equivalent to
+<p>should be equivalent to:
 </p>
 <pre class="screen">(array-set! <em class="replaceable"><code>arr</code></em> <em class="replaceable"><code>index</code></em> ... <em class="replaceable"><code>new-value</code></em>)
 </pre>
@@ -520,12 +532,12 @@ In the second form, <em class="replaceable"><code>index</code></em> must be eith
 </pre>
 <p>Returns <code class="literal">"huuhkaja"</code>.
 </p>
-<p><span class="emphasis"><em>Compatibility:</em></span> SRFI-47, Guile and Scheme-48 have <code class="literal">array-set!</code> with a
+<p><span class="emphasis"><em>Compatibility:</em></span> SRFI 47, Guile and Scheme-48 have <code class="literal">array-set!</code> with a
 different argument order.
 </p>
 </blockquote></div>
 <p class="synopsis" kind="Procedure"><span class="kind">Procedure</span><span class="ignore">: </span><a class="indexterm" name="idm45251523680752"></a> <code class="function">array-copy!</code> <em class="replaceable"><code>dst</code></em> <em class="replaceable"><code>src</code></em></p>
-<div class="blockquote"><blockquote class="blockquote"><p><span class="emphasis"><em>Compatibility:</em></span> Guile has a <code class="literal">array-copy!</code> with the reversed
+<div class="blockquote"><blockquote class="blockquote"><p><span class="emphasis"><em>Compatibility:</em></span> Guile has an <code class="literal">array-copy!</code> with the reversed
 argument order.
 </p></blockquote></div>
 <p class="synopsis" kind="Procedure"><span class="kind">Procedure</span><span class="ignore">: </span><a class="indexterm" name="idm45251523676272"></a> <code class="function">array-fill!</code> <em class="replaceable"><code>array</code></em> <em class="replaceable"><code>value</code></em></p>
@@ -537,10 +549,10 @@ You can use <code>(array-fill! (array-index-share <em class="replaceable"><code>
 <div class="titlepage"><div><div><h3 class="title">
 <a name="Transformations-and-views"></a>Transformations and views</h3></div></div></div>
 <p>A view or transform of an array is an array <em class="replaceable"><code>a<sub>2</sub></code></em>
-whose elements come from some other array <em class="replaceable"><code>a<sub>1</sub></code></em>,
+whose elements come from some other array <em class="replaceable"><code>a<sub>1</sub></code></em>
 given some transform function <em class="replaceable"><code>T</code></em> that maps <em class="replaceable"><code>a<sub>2</sub></code></em> indexes
 to <em class="replaceable"><code>a<sub>1</sub></code></em> indexes.
-Specifically <code class="literal">(array-ref <em class="replaceable"><code>a<sub>2</sub></code></em> <em class="replaceable"><code>indexes</code></em>)</code>
+Specifically, <code class="literal">(array-ref <em class="replaceable"><code>a<sub>2</sub></code></em> <em class="replaceable"><code>indexes</code></em>)</code>
 is <code class="literal">(array-ref <em class="replaceable"><code>a<sub>1</sub></code></em> (<em class="replaceable"><code>T</code></em> <em class="replaceable"><code>indexes</code></em>))</code>.
 Modifying <em class="replaceable"><code>a<sub>2</sub></code></em> causes <em class="replaceable"><code>a<sub>1</sub></code></em> to be modified;
 modifying <em class="replaceable"><code>a<sub>1</sub></code></em> may modify <em class="replaceable"><code>a<sub>2</sub></code></em>
@@ -580,7 +592,7 @@ the <code class="literal">array-index-ref</code> example):
 ║32│33║
 ╚══╧══╝
 </pre>
-<p>The <code class="literal">array-transform</code> is generalization of <code class="literal">share-array</code>,
+<p>The <code class="literal">array-transform</code> procedure is a generalization of <code class="literal">share-array</code>
 in that it does not require the <em class="replaceable"><code>transform</code></em> to be affine.
 Also note the different calling conversions for the <em class="replaceable"><code>tranform</code></em>:
 <code class="literal">array-transform</code> takes a single argument (a vector of indexes),
@@ -598,7 +610,7 @@ is a modifiable view into the argument <em class="replaceable"><code>array</code
 <div class="blockquote"><blockquote class="blockquote"><p>Creates a new array <em class="replaceable"><code>narray</code></em> of the given <em class="replaceable"><code>shape</code></em>,
 such that <code class="literal">(array-&gt;vector <em class="replaceable"><code>array</code></em>)</code> and
 <code class="literal">(array-&gt;vector <em class="replaceable"><code>narray</code></em>)</code> are equivalent.
-I.e. the <em class="replaceable"><code>i</code></em>’th element in row-major-order of <em class="replaceable"><code>narray</code></em>
+In other words, the <em class="replaceable"><code>i</code></em>’th element in row-major-order of <em class="replaceable"><code>narray</code></em>
 is the <em class="replaceable"><code>i</code></em>’th element in row-major-order of <em class="replaceable"><code>array</code></em>.
 Hence <code class="literal">(array-size <em class="replaceable"><code>narray</code></em>)</code> (as specified from the <em class="replaceable"><code>shape</code></em>)
 must be equal to <code class="literal">(array-size <em class="replaceable"><code>array</code></em>)</code>.
