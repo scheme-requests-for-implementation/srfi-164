@@ -62,7 +62,7 @@ The Rationale section is empty.
 <li>
 The Acknowledgements section is empty.
 <li>
-The range API is new and untested.  Some changes (including functions names) may not make sense.
+The range API is new and untested.  Some changes (including function names) may not make sense.
 It may make sense to move it into a separate SRFI.
 <li>
 Right now we have shape-specifiers, and the SRFI 4 <code>shape</code>
@@ -81,6 +81,8 @@ It might be useful to have <code>array-copy</code>,
 though if we have <code>array-shape</code>
 then <code>(array-copy arr)</code> is trivially
 defined as <code>(array-reshape (array-flatten arr) (array-shape arr))</code>.
+An <code>array-map</code> seems useful; APL-style "rank extension"
+may be useful but tricky.
 <li>Need alternate non-Kawa way to expression pseudo-ranges.
 <li>Any other Kawa-isms that need to be removed?
 <li>Describe implementation.</ul>
@@ -166,8 +168,28 @@ In this case, the resulting range is the first <var>count</var> elements of the 
 The expression <code>(range-take <var>count</var> <var>start</var> <var>step</var>)</code>
 yields the same sequence as SRFI 1's <code>(iota <var>count</var> <var>start</var> <var>step</var>)</code>.
 </p></blockquote></div>
-<p>
-This specification is based on <a href="https://www.gnu.org/software/kawa/Ranges.html">Kawa's range type</a>,
+<div kind="Procedure"><p class="synopsis" kind="Procedure"> <code class="function">(range-start</code> <var>range</var><code>)</code></p>
+<blockquote><p>Return the <var>start</var> value of the range.
+</p></blockquote></div>
+<div kind="Procedure"><p class="synopsis" kind="Procedure"> <code class="function">(range-step</code> <var>range</var><code>)</code></p>
+<blockquote><p>Return the <var>step</var> value of the range.
+</p></blockquote></div>
+<div kind="Procedure"><p class="synopsis" kind="Procedure"> <code class="function">(range-length</code> <var>range</var><code>)</code></p>
+<blockquote><p>Return the number of values (the <var>count</var>) of the range,
+if finite.  If unbounded, return <code>#f</code>.
+</p></blockquote></div><p>
+  <div kind="Procedure"><p class="synopsis" kind="Procedure"> <code class="function">(range-ref</code> <var>range</var> <var>index</var><code>)</code></p>
+<blockquote>
+<p>If is an error if <var>index</var> is not an exact non-negative integer, or
+if <code>(range-length <var>range</var>)</code>
+is an integer (not <code>#f</code>) and greater-or-equal to <var>index</var>.
+Otherwise, returns <code>(+ <var>start</var> (* <var>index</var> </var>step</var>))</code>.
+</p></blockquote></div>
+<p>It is convenient but not required that standard vector procedures
+such as <code>vector-map</code> be extended to work on ranges.
+In that case, <code>vector-ref</code> on a range should be
+the same as <code>range-ref</code>.
+<p>This specification is based on <a href="https://www.gnu.org/software/kawa/Ranges.html">Kawa's range type</a>,
 though Kawa has a prettier syntax.
 </div>
 
@@ -226,7 +248,7 @@ the lower bound <em class="replaceable"><code>b<sub>k</sub></code></em> is <code
 Examples: <code>#2a((0 2) (0 3))</code> and <code>#2a((1 3) (1 4))</code>.
 </p></li>
 </ul></div>
-<p class="synopsis" kind="Procedure"><span class="kind">Procedure</span><span class="ignore">: </span><a class="indexterm" name="idm45251523905968"></a> <code class="function">shape</code> <em class="replaceable"><code>bound</code></em> <em class="replaceable"><code>...</code></em></p>
+<p class="synopsis" kind="Procedure"><code>(<span class="proc-def">shape</span></code> <var>bound</var> <var>...</var><code>)</code></p>
 <div class="blockquote"><blockquote class="blockquote">
 <p>Returns a shape, in the <code>(<var>r</var> 2)</code> form. The sequence <var>bound</var> ... must consist of an even number
 of exact integers that are pairwise not decreasing. Each pair gives the
@@ -249,7 +271,7 @@ is equivalent to:
 <code class="literal">(apply array (vector 2 (/ (length <var>bounds</var>) 2)) <var>bounds</var>)</code>
 </p>
 </blockquote></div>
-<p class="synopsis" kind="Procedure"><span class="kind">Procedure</span><span class="ignore">: </span><a class="indexterm" name="idm45251523887392"></a> <code class="function">array-rank</code> <em class="replaceable"><code>array</code></em></p>
+<p class="synopsis" kind="Procedure"><code class="function">(<span class="proc-def" id="array-rank">array-rank</span></code> <var>array</var><code>)</code></p>
 <div class="blockquote"><blockquote class="blockquote">
 <p>Returns the number of dimensions of <em class="replaceable"><code>array</code></em>.
 </p>
@@ -259,31 +281,31 @@ is equivalent to:
 <p>Returns 2.
 </p>
 </blockquote></div>
-<p class="synopsis" kind="Procedure"><span class="kind">Procedure</span><span class="ignore">: </span><a class="indexterm" name="idm45251523882976"></a> <code class="function">array-start</code> <em class="replaceable"><code>array</code></em> <em class="replaceable"><code>k</code></em></p>
+<p class="synopsis" kind="Procedure"><code class="function">(<span class="proc-def" id="array-start">array-start</code> <var>array</var> <var>k</var><code>)</code></p>
 <div class="blockquote"><blockquote class="blockquote"><p>Returns the lower bound (inclusive) for the index along dimension <em class="replaceable"><code>k</code></em>.
 This is most commonly 0.
 </p></blockquote></div>
-<p class="synopsis" kind="Procedure"><span class="kind">Procedure</span><span class="ignore">: </span><a class="indexterm" name="idm45251523878736"></a> <code class="function">array-end</code> <em class="replaceable"><code>array</code></em> <em class="replaceable"><code>k</code></em></p>
+<p class="synopsis" kind="Procedure"><code class="function">(<span class="proc-def">array-end</span></code> <var>array</var> <var>k</var></code><code>)</code></p>
 <div class="blockquote"><blockquote class="blockquote"><p>Returns the upper bound for the index along dimension <em class="replaceable"><code>k</code></em>.
 The bound is exclusive - i.e. the first integer higher
 than the last legal index.
 </p></blockquote></div>
-<p class="synopsis" kind="Procedure"><span class="kind">Procedure</span><span class="ignore">: </span><a class="indexterm" name="idm45251523874464"></a> <code class="function">array-size</code> <em class="replaceable"><code>array</code></em></p>
-<div class="blockquote"><blockquote class="blockquote"><p>Return the total number of elements of <em class="replaceable"><code>array</code></em>.
+<p class="synopsis" kind="Procedure"><code class="function">(<span class="proc-def" id="array-size">array-size</span></code> <var>array</var><code.)</code><code>)</code></p>
+<div class="blockquote"><blockquote class="blockquote"><p>Return the total number of elements of <var>array</var>.
 This is the product of <code class="literal">(- (array-end <em class="replaceable"><code>array</code></em> <em class="replaceable"><code>k</code></em>) (array-start <em class="replaceable"><code>array</code></em> <em class="replaceable"><code>k</code></em>))</code> for every valid <em class="replaceable"><code>k</code></em>.
 </p></blockquote></div>
 </div>
 <div class="sect2">
 <h3 class="title" id="Array-construction"></a>Array construction</h3>
-<p>See also <code class="literal">array-reshape</code>.
+<p>See also <a href="#array-reshape"><code class="literal">array-reshape</code></a>.
 </p>
-<p class="synopsis" kind="Procedure"><span class="kind">Procedure</span><span class="ignore">: </span><a class="indexterm" name="idm45251523800048"></a> <code class="function">array</code> <em class="replaceable"><code>shape</code></em> <em class="replaceable"><code>obj</code></em> <em class="replaceable"><code>...</code></em></p>
+<p class="synopsis" kind="Procedure"><code class="function">(<span class="proc-def">array</span></code> <em class="replaceable"><code>shape</code></em> <var>obj</var> <var>...</var><code>)</code></p>
 <div class="blockquote"><blockquote class="blockquote"><p>Returns a new array whose shape is given by <em class="replaceable"><code>shape</code></em> and the initial
 contents of the elements are <em class="replaceable"><code>obj</code></em> ... in row major order. The array does
 not retain a reference to <em class="replaceable"><code>shape</code></em>.
 </p></blockquote></div>
-<p class="synopsis" kind="Procedure"><span class="kind">Procedure</span><span class="ignore">: </span><a class="indexterm" name="idm45251523794512"></a> <code class="function">make-array</code> <em class="replaceable"><code>shape</code></em></p>
-<p class="synopsis" kind="Procedure"><span class="kind">Procedure</span><span class="ignore">: </span><a class="indexterm" name="idm45251523791680"></a> <code class="function">make-array</code> <em class="replaceable"><code>shape</code></em> <em class="replaceable"><code>value...</code></em></p>
+<p class="synopsis" kind="Procedure"><code class="function">(<span class="proc-def">make-array</span></code> <var>shape</var><code>)</code></p>
+<p class="synopsis" kind="Procedure"><code class="function">(<span class="proc-def">make-array</span></code> <var>shape</var> <var>value...</var><code>)</code></p>
 <div class="blockquote"><blockquote class="blockquote">
 <p>Returns a newly allocated array whose shape is given by <em class="replaceable"><code>shape</code></em>.
 If <em class="replaceable"><code>value</code></em> is provided, then each element is initialized to it.
@@ -303,7 +325,7 @@ The array does not retain a reference to <em class="replaceable"><code>shape</co
 <p><span class="emphasis"><em>Compatibility:</em></span> Guile has an incompatible <code class="literal">make-array</code> procedure.
 </p>
 </blockquote></div>
-<p class="synopsis" kind="Procedure"><span class="kind">Procedure</span><span class="ignore">: </span><a class="indexterm" name="idm45251523782144"></a> <code class="function">build-array</code> <em class="replaceable"><code>shape</code></em> <em class="replaceable"><code>procedure</code></em></p>
+<p class="synopsis" kind="Procedure"><code class="function">(<span class="proc-def">build-array<span></code> <var>shape</var> <var>procedure</var><code>)</code></p>
 <div class="blockquote"><blockquote class="blockquote">
 <p>Construct a “virtual array” of the given <em class="replaceable"><code>shape</code></em> that uses no storage for the elements.
 Instead, elements are calculated on demand by calling <em class="replaceable"><code>procedure</code></em>,
@@ -322,11 +344,11 @@ which takes a single argument, an index vector.
 ╚══╧══╧═╝
 </pre>
 </blockquote></div>
-<p class="synopsis" kind="Procedure"><span class="kind">Procedure</span><span class="ignore">: </span><a class="indexterm" name="idm45251523773504"></a> <code class="function">index-array</code> <em class="replaceable"><code>shape</code></em></p>
+<p class="synopsis" kind="Procedure"><code class="function">(<span class="proc-def">index-array</span></code> <var>shape</var><code>)</code></p>
 <div class="blockquote"><blockquote class="blockquote">
 <p>Return a new immutable array of the specified <em class="replaceable"><code>shape</code></em>
 where each element is the corresponding row-major index.
-Same as <code class="literal">(array-reshape [0 &lt;: <em class="replaceable"><code>size</code></em>] <em class="replaceable"><code>shape</code></em>)</code>
+Same as <code class="literal">(array-reshape (range-take <var>size</var>) <var>shape</var>)</code>
 where <em class="replaceable"><code>size</code></em> is the <code class="literal">array-size</code> of the resulting array.
 </p>
 <pre class="screen"><strong class="userinput"><code>(index-array #2a((1 3) (2 6)))</code></strong> &#x21e8;
@@ -353,13 +375,8 @@ at index <code class="literal">[<em class="replaceable"><code>i</code></em> <em 
 <p>Using <code class="literal">array-index-ref</code>
 (but not plain <code class="literal">array-ref</code>) you can do generalized APL-style
 slicing and indirect indexing.
-<p>An optional extension (implemented in Kawa) allows you to <q>call</q> an array as it it were a function (<q>function-call notation</q>).
-This should be equivalent to calling <code class="literal">array-index-ref</code>.
-</p>
-<pre class="screen">(<em class="replaceable"><code>arr</code></em> <em class="replaceable"><code>i</code></em> <em class="replaceable"><code>j</code></em>) ;; Optional extension, equivalent to (array-index-ref <em class="replaceable"><code>arr</code></em> <em class="replaceable"><code>i</code></em> <em class="replaceable"><code>j</code></em>)
-</pre>
-<p class="synopsis" kind="Procedure"><span class="kind">Procedure</span><span class="ignore">: </span><a class="indexterm" name="idm45251523753856"></a> <code class="function">array-ref</code> <em class="replaceable"><code>array</code></em> <em class="replaceable"><code>k</code></em> <em class="replaceable"><code>...</code></em></p>
-<p class="synopsis" kind="Procedure"><span class="kind">Procedure</span><span class="ignore">: </span><a class="indexterm" name="idm45251523750256"></a> <code class="function">array-ref</code> <em class="replaceable"><code>array</code></em> <em class="replaceable"><code>index</code></em></p>
+<p class="synopsis" kind="Procedure"><code class="function">(<span class="proc-def">array-ref</span></code> <var>array</var> <var>k</var> <var>...</var><code>)</code></p>
+<p class="synopsis" kind="Procedure"><code class="function">(<span class="proc-def">array-ref</span></code> <em class="replaceable"><code>array</code></em> <em class="replaceable"><code>index</code></em><code>)</code></p>
 <div class="blockquote"><blockquote class="blockquote">
 <p>Returns the contents of the element of <em class="replaceable"><code>array</code></em> at index <em class="replaceable"><code>k</code></em> ....
 The sequence <em class="replaceable"><code>k</code></em> ... must be a valid index to <em class="replaceable"><code>array</code></em>.
@@ -382,28 +399,41 @@ In the second form, <em class="replaceable"><code>index</code></em> must be a ve
 <p>Returns <code class="literal">(3 1 4)</code>.
 </p>
 </blockquote></div>
-<p class="synopsis" kind="Procedure"><span class="kind">Procedure</span><span class="ignore">: </span><a class="indexterm" name="idm45251523741568"></a> <code class="function">array-index-ref</code> <em class="replaceable"><code>array</code></em> <em class="replaceable"><code>index</code></em> <em class="replaceable"><code>...</code></em></p>
+<p class="synopsis" kind="Procedure"><code class="function">(<span class="proc-def">array-index-ref</span></code> <em class="replaceable"><code>array</code></em> <em class="replaceable"><code>index</code></em> <var>...</var><code>)</code></p>
 <div class="blockquote"><blockquote class="blockquote">
 <p>Generalized APL-style array indexing, where each <em class="replaceable"><code>index</code></em>
 can be either an array or an integer.
 </p>
-<p>If each <em class="replaceable"><code>index</code></em> is an integer, then the result is the same as <code class="literal">array-ref</code>.
+<p>If each <var>index</var> is an integer,
+or there is no <var>index</var>,
+then the result is the same as <code class="literal">array-ref</code>.
 </p>
 <p>Otherwise, the result is an immutable array whose rank is the sum of the ranks of
 each <em class="replaceable"><code>index</code></em>.  An integer is treated as rank-0 array.
+The shape of the result is the <q>concatenation</q> of the shapes of
+indexes: The lowers bounds is the concatenation of the lower bounds
+of the indexes, and similar for the upper bounds.
+(If an index is an unbounded range, it is truncated as needed to not
+cause an error.)
 </p>
 <p>If <em class="replaceable"><code>marr</code></em> is the result of <code class="literal">(array-index-ref <em class="replaceable"><code>arr</code></em> <em class="replaceable"><code>M<sub>1</sub></code></em> <em class="replaceable"><code>M<sub>2</sub></code></em> ...)</code> then:
 </p>
-<pre class="screen">(<em class="replaceable"><code>marr</code></em> <em class="replaceable"><code>i<sub>11</sub></code></em> <em class="replaceable"><code>i<sub>12</sub></code></em> ... <em class="replaceable"><code>i<sub>21</sub></code></em> <em class="replaceable"><code>i<sub>22</sub></code></em> ...)
+<pre class="screen">(array-ref <var>marr</var> <em class="replaceable"><code>i<sub>11</sub></code></em> <em class="replaceable"><code>i<sub>12</sub></code></em> ... <em class="replaceable"><code>i<sub>21</sub></code></em> <em class="replaceable"><code>i<sub>22</sub></code></em> ...)
 </pre>
 <p>is defined as:
 </p>
-<pre class="screen">(<em class="replaceable"><code>arr</code></em> (<em class="replaceable"><code>M<sub>1</sub></code></em> <em class="replaceable"><code>i<sub>11</sub></code></em> <em class="replaceable"><code>i<sub>12</sub></code></em> ...) (<em class="replaceable"><code>M<sub>2</sub></code></em> <em class="replaceable"><code>i<sub>21</sub></code></em> <em class="replaceable"><code>i<sub>22</sub></code></em> ...) ...)
+<pre class="screen">(array-ref <em class="replaceable"><code>arr</code></em> (array-ref <em class="replaceable"><code>M<sub>1</sub></code></em> <em class="replaceable"><code>i<sub>11</sub></code></em> <em class="replaceable"><code>i<sub>12</sub></code></em> ...) (array-ref <em class="replaceable"><code>M<sub>2</sub></code></em> <em class="replaceable"><code>i<sub>21</sub></code></em> <em class="replaceable"><code>i<sub>22</sub></code></em> ...) ...)
 </pre>
 <p>Each <em class="replaceable"><code>M<sub>k</sub></code></em> gets as many indexes as its rank.
 If <em class="replaceable"><code>M<sub>k</sub></code></em> is an integer, then it we use
-it directly without any indexing.
+it directly without any indexing, as if it were a rank-0 array.
 </p>
+<p>
+The resulting array <var>marr</var> is fresh array
+that does not depend on any of the arguments.
+Specifically, if <code>array-ref</code> is called on <var>marr</var>
+with valid indexes (within its shape), then no error is possible;
+any potenitally invalid indexes must be caught by <code>array-index-ref</code>.
 <p>Here are some examples, starting with simple indexing.
 </p>
 <pre class="screen"><strong class="userinput"><code>(define arr (array #2a((1 4) (0 4))</code></strong>
@@ -494,30 +524,9 @@ along a dimension.  To select row 2 (1-origin):
 </pre>
 </blockquote></div>
 </div>
-<div class="sect2">
-<div class="titlepage"><div><div><h3 class="title">
-<a name="Modifying-arrays"></a>Modifying arrays</h3></div></div></div>
-<p>An implementation that supports <a href="https://srfi.schemers.org/srfi-17/srfi-17.html">SRFI 17 (generalized <code>set!</code>)</a>
-should allow <code class="literal">set!</code> to modify one or multiple elements.
-To modify a single element:
-</p>
-<pre class="screen">(set! (<em class="replaceable"><code>arr</code></em> <em class="replaceable"><code>index</code></em> ...) <em class="replaceable"><code>new-value</code></em>)
-</pre>
-<p>should be equivalent to:
-</p>
-<pre class="screen">(array-set! <em class="replaceable"><code>arr</code></em> <em class="replaceable"><code>index</code></em> ... <em class="replaceable"><code>new-value</code></em>)
-</pre>
-<p>You can set a slice (or all of the elements).
-In that case:
-</p>
-<pre class="screen">(set! (<em class="replaceable"><code>arr</code></em> <em class="replaceable"><code>index</code></em> ...) <em class="replaceable"><code>new-array</code></em>)
-</pre>
-<p>is equivalent to:
-</p>
-<pre class="screen">(array-copy! (array-index-share <em class="replaceable"><code>arr</code></em> <em class="replaceable"><code>index</code></em> ...) <em class="replaceable"><code>new-array</code></em>)
-</pre>
-<p class="synopsis" kind="Procedure"><span class="kind">Procedure</span><span class="ignore">: </span><a class="indexterm" name="idm45251523694464"></a> <code class="function">array-set!</code> <em class="replaceable"><code>array</code></em> <em class="replaceable"><code>k</code></em> <em class="replaceable"><code>...</code></em> <em class="replaceable"><code>obj</code></em></p>
-<p class="synopsis" kind="Procedure"><span class="kind">Procedure</span><span class="ignore">: </span><a class="indexterm" name="idm45251523690480"></a> <code class="function">array-set!</code> <em class="replaceable"><code>array</code></em> <em class="replaceable"><code>index</code></em> <em class="replaceable"><code>obj</code></em></p>
+<div class="sect2"><h3 class="title" id="Modifying-arrays">Modifying arrays</h3>
+<p class="synopsis" kind="Procedure"><code class="function">(<span class="proc-def">array-set!<span></code> <var>array</var> <var>k</var> <var>...</var> <var>obj</var><code>)</code></p>
+<p class="synopsis" kind="Procedure"><code class="function">(<span class="proc-def">array-set!</span></code> <var>array</var> <var>index</var> <var>obj</var><code>)</code></p>
 <div class="blockquote"><blockquote class="blockquote">
 <p>Stores <em class="replaceable"><code>obj</code></em> in the element of <em class="replaceable"><code>array</code></em> at index <em class="replaceable"><code>k</code></em> ....
 Returns the void value.
@@ -536,14 +545,46 @@ In the second form, <em class="replaceable"><code>index</code></em> must be eith
 different argument order.
 </p>
 </blockquote></div>
-<p class="synopsis" kind="Procedure"><span class="kind">Procedure</span><span class="ignore">: </span><a class="indexterm" name="idm45251523680752"></a> <code class="function">array-copy!</code> <em class="replaceable"><code>dst</code></em> <em class="replaceable"><code>src</code></em></p>
-<div class="blockquote"><blockquote class="blockquote"><p><span class="emphasis"><em>Compatibility:</em></span> Guile has an <code class="literal">array-copy!</code> with the reversed
+<p class="synopsis" kind="Procedure"><code class="function">(<span class="proc-def">array-copy!</span></code> <var>dst</var> <var>src</var><code>)</code></p>
+
+<div class="blockquote"><blockquote class="blockquote"><p>Both arguments must have the same shape.
+Every element in <var>dst</var> is replaced by the corresponding
+element in <var>src</var>.</p>
+<p><span class="emphasis"><em>Compatibility:</em></span> Guile has an <code class="literal">array-copy!</code> with the reversed
 argument order.
 </p></blockquote></div>
-<p class="synopsis" kind="Procedure"><span class="kind">Procedure</span><span class="ignore">: </span><a class="indexterm" name="idm45251523676272"></a> <code class="function">array-fill!</code> <em class="replaceable"><code>array</code></em> <em class="replaceable"><code>value</code></em></p>
+<p class="synopsis" kind="Procedure"><code class="function">(<span class="proc-def">array-fill!<span></code> <var>array</> <var>value</var><code>)</code></p>
 <div class="blockquote"><blockquote class="blockquote"><p>Set all the values <em class="replaceable"><code>array</code></em> to <em class="replaceable"><code>value</code></em>.
 You can use <code>(array-fill! (array-index-share <em class="replaceable"><code>array</code></em> <em class="replaceable"><code>indexes</code></em>...) <em class="replaceable"><code>value</code></em>)</code> to set a subset of the array.
 </p></blockquote></div>
+</div>
+<div class="sect2"><h3 class="title" id="array-as-procedure">Array as procedure (non-normative)</h3>
+An optional extension (implemented in Kawa) is to allow
+<q>applying</q> a vector or array as a procedure.
+In such an implementation <code>(<var>vec</var> <var>i</var>)</code>
+is the same as <code>(vector-ref <var>vec</var> <var>i</var>)</code>,
+and it is suggested that
+<code>(<var>array</var> <var>index</var> ...)</code> should be
+equivalent to <code>(array-index-ref <var>array</var> <var>index</var> ...)</code>.
+<p>An implementation that also supports <a href="https://srfi.schemers.org/srfi-17/srfi-17.html">SRFI 17 (generalized <code>set!</code>)</a>
+should allow <code class="literal">set!</code> to modify one or multiple elements.
+To modify a single element:
+</p>
+<pre class="screen">(set! (<em class="replaceable"><code>arr</code></em> <em class="replaceable"><code>index</code></em> ...) <em class="replaceable"><code>new-value</code></em>)
+</pre>
+<p>should be equivalent to:
+</p>
+<pre class="screen">(array-set! <em class="replaceable"><code>arr</code></em> <em class="replaceable"><code>index</code></em> ... <em class="replaceable"><code>new-value</code></em>)
+</pre>
+<p>You can set a slice (or all of the elements).
+In that case:
+</p>
+<pre class="screen">(set! (<em class="replaceable"><code>arr</code></em> <em class="replaceable"><code>index</code></em> ...) <em class="replaceable"><code>new-array</code></em>)
+</pre>
+<p>is equivalent to:
+</p>
+<pre class="screen">(array-copy! (array-index-share <em class="replaceable"><code>arr</code></em> <em class="replaceable"><code>index</code></em> ...) <em class="replaceable"><code>new-array</code></em>)
+</pre>
 </div>
 <div class="sect2">
 <div class="titlepage"><div><div><h3 class="title">
@@ -557,12 +598,12 @@ is <code class="literal">(array-ref <em class="replaceable"><code>a<sub>1</sub><
 Modifying <em class="replaceable"><code>a<sub>2</sub></code></em> causes <em class="replaceable"><code>a<sub>1</sub></code></em> to be modified;
 modifying <em class="replaceable"><code>a<sub>1</sub></code></em> may modify <em class="replaceable"><code>a<sub>2</sub></code></em>
 (depending on the transform function).
-The shape of <em class="replaceable"><code>a<sub>2</sub></code></em> is in generally different than that of <em class="replaceable"><code>a<sub>1</sub></code></em>.
+The shape of <em class="replaceable"><code>a<sub>2</sub></code></em> is in general different than that of <em class="replaceable"><code>a<sub>1</sub></code></em>.
 The result <em class="replaceable"><code>a<sub>2</sub></code></em> is
 mutable if and only if <em class="replaceable"><code>a<sub>1</sub></code></em>
 is, with the same element type restrictions, if any.
 </p>
-<p class="synopsis" kind="Procedure"><span class="kind">Procedure</span><span class="ignore">: </span><a class="indexterm" name="idm45251523659456"></a> <code class="function">array-transform</code> <em class="replaceable"><code>array</code></em> <em class="replaceable"><code>shape</code></em> <em class="replaceable"><code>transform</code></em></p>
+<p class="synopsis" kind="Procedure"><code class="function">(<span class="proc-def">array-transform</span></code> <var>array</var> <var>shape</var> <var>transform</var><code>)</code></p>
 <div class="blockquote"><blockquote class="blockquote">
 <p>This is a general mechanism for creating a view.
 The result is a new array with the given <em class="replaceable"><code>shape</code></em>.
@@ -601,12 +642,12 @@ and returns a single result (a vector of indexes);
 one value for each index.  The difference is historical.
 </p>
 </blockquote></div>
-<p class="synopsis" kind="Procedure"><span class="kind">Procedure</span><span class="ignore">: </span><a class="indexterm" name="idm45251523644496"></a> <code class="function">array-index-share</code> <em class="replaceable"><code>array</code></em> <em class="replaceable"><code>index</code></em> <em class="replaceable"><code>...</code></em></p>
+<p class="synopsis" kind="Procedure"><code class="function">(<span class="proc-def">array-index-share</span></code> <var>array</var> <var>index</var> <var>...</var><code>)</code></p>
 <div class="blockquote"><blockquote class="blockquote"><p>This does the same generalized APL-style indexing
 as <code class="literal">array-index-ref</code>.  However, the resulting array
 is a modifiable view into the argument <em class="replaceable"><code>array</code></em>.
 </p></blockquote></div>
-<p class="synopsis" kind="Procedure"><span class="kind">Procedure</span><span class="ignore">: </span><a class="indexterm" name="idm45251523639376"></a> <code class="function">array-reshape</code> <em class="replaceable"><code>array</code></em> <em class="replaceable"><code>shape</code></em></p>
+<p class="synopsis" kind="Procedure"><code class="function">(<span class="proc-def" id="array-reshape">array-reshape<span></code> <var>array</var> <var>shape</var>)</code></p>
 <div class="blockquote"><blockquote class="blockquote"><p>Creates a new array <em class="replaceable"><code>narray</code></em> of the given <em class="replaceable"><code>shape</code></em>,
 such that <code class="literal">(array-&gt;vector <em class="replaceable"><code>array</code></em>)</code> and
 <code class="literal">(array-&gt;vector <em class="replaceable"><code>narray</code></em>)</code> are equivalent.
@@ -617,7 +658,7 @@ must be equal to <code class="literal">(array-size <em class="replaceable"><code
 The resulting <em class="replaceable"><code>narray</code></em> is a view such that modifying <em class="replaceable"><code>array</code></em>
 also modifies <em class="replaceable"><code>narray</code></em> and vice versa.
 </p></blockquote></div>
-<p class="synopsis" kind="Procedure"><span class="kind">Procedure</span><span class="ignore">: </span><a class="indexterm" name="idm45251523627552"></a> <code class="function">share-array</code> <em class="replaceable"><code>array</code></em> <em class="replaceable"><code>shape</code></em> <em class="replaceable"><code>proc</code></em></p>
+<p class="synopsis" kind="Procedure"><code class="function">(<span class="proc-def">share-array</span></code> <var>array</var> <var>shape</var> <var>proc</var><code>)</code></p>
 <div class="blockquote"><blockquote class="blockquote">
 <p>Returns a new array of <em class="replaceable"><code>shape</code></em> shape that shares elements of <em class="replaceable"><code>array</code></em>
 through <em class="replaceable"><code>proc</code></em>. The procedure <em class="replaceable"><code>proc</code></em> must implement an affine
@@ -659,8 +700,8 @@ procedure.
    &#x21e8;  #2f64((1.0 2.0 3.0) (4.0 5.0 6.0))
 </pre>
 </blockquote></div>
-<p class="synopsis" kind="Procedure"><span class="kind">Procedure</span><span class="ignore">: </span><a class="indexterm" name="idm45251523612352"></a> <code class="function">array-flatten</code> <em class="replaceable"><code>array</code></em></p>
-<p class="synopsis" kind="Procedure"><span class="kind">Procedure</span><span class="ignore">: </span><a class="indexterm" name="idm45251523609520"></a> <code class="function">array-&gt;vector</code> <em class="replaceable"><code>array</code></em></p>
+<p class="synopsis" kind="Procedure"><code class="function">(<span class="proc-def">array-flatten</span></code> <var>array</var><code>)</code></p>
+<p class="synopsis" kind="Procedure"><code class="function">(<span class="proc-def">array-&gt;vector</span></code> <var>array</var><code>)</code></p>
 <div class="blockquote"><blockquote class="blockquote">
 <p>Return a vector consisting of the elements of the <em class="replaceable"><code>array</code></em>
 in row-major-order.
