@@ -182,7 +182,7 @@ if finite.  If unbounded, return <code>#f</code>.
 <blockquote>
 <p>If is an error if <var>index</var> is not an exact non-negative integer, or
 if <code>(range-length <var>range</var>)</code>
-is an integer (not <code>#f</code>) and greater-or-equal to <var>index</var>.
+is an integer (not <code>#f</code>) and greater than or equal to <var>index</var>.
 Otherwise, returns <code>(+ <var>start</var> (* <var>index</var> </var>step</var>))</code>.
 </p></blockquote></div>
 <p>It is convenient but not required that standard vector procedures
@@ -429,11 +429,11 @@ If <em class="replaceable"><code>M<sub>k</sub></code></em> is an integer, then i
 it directly without any indexing, as if it were a rank-0 array.
 </p>
 <p>
-The resulting array <var>marr</var> is fresh array
+The resulting array <var>marr</var> is a fresh array
 that does not depend on any of the arguments.
 Specifically, if <code>array-ref</code> is called on <var>marr</var>
 with valid indexes (within its shape), then no error is possible;
-any potenitally invalid indexes must be caught by <code>array-index-ref</code>.
+any potentially invalid indexes must be caught by <code>array-index-ref</code>.
 <p>Here are some examples, starting with simple indexing.
 </p>
 <pre class="screen"><strong class="userinput"><code>(define arr (array #2a((1 4) (0 4))</code></strong>
