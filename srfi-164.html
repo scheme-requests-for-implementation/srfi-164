@@ -86,7 +86,7 @@ An <code>array-map</code> seems useful; APL-style "rank extension"
 may be useful but tricky.
 <li>Need alternate non-Kawa way to expression pseudo-ranges.
 <li>Any other Kawa-isms that need to be removed?
-<li>Describe implementation.</ul>
+</ul>
 
 <h1>Rationale</h1>
 
@@ -369,9 +369,9 @@ and <em class="replaceable"><code>j</code></em>, the following all get the eleme
 at index <code class="literal">[<em class="replaceable"><code>i</code></em> <em class="replaceable"><code>j</code></em>]</code>.
 </p>
 <pre>
-(array-index-ref <em class="replaceable"><code>arr</code></em> <em class="replaceable"><code>i</code></em> <em class="replaceable"><code>j</code></em>)
-(array-ref <em class="replaceable"><code>arr</code></em> <em class="replaceable"><code>i</code></em> <em class="replaceable"><code>j</code></em>)
-(array-ref <em class="replaceable"><code>arr</code></em> [<em class="replaceable"><code>i</code></em> <em class="replaceable"><code>j</code></em>])
+(array-index-ref <var>arr</var> <var>i</var> <var>j</var>)
+(array-ref <var>arr</var> <var>i</var> <var>j</var>)
+(array-ref <var>arr</var> (vector <var>i</var> <var>j</var>))
 </pre>
 <p>Using <code class="literal">array-index-ref</code>
 (but not plain <code class="literal">array-ref</code>) you can do generalized APL-style
@@ -647,6 +647,10 @@ one value for each index.  The difference is historical.
 <div class="blockquote"><blockquote class="blockquote"><p>This does the same generalized APL-style indexing
 as <code class="literal">array-index-ref</code>.  However, the resulting array
 is a modifiable view into the argument <em class="replaceable"><code>array</code></em>.
+If each index is an integer, the result is a rank-0 array
+that is a view of the selected element
+(unlike <code class="literal">array-index-ref</code>
+which would return the selected element directly).
 </p></blockquote></div>
 <p class="synopsis" kind="Procedure"><code class="function">(<span class="proc-def" id="array-reshape">array-reshape<span></code> <var>array</var> <var>shape</var>)</code></p>
 <div class="blockquote"><blockquote class="blockquote"><p>Creates a new array <em class="replaceable"><code>narray</code></em> of the given <em class="replaceable"><code>shape</code></em>,
@@ -720,7 +724,136 @@ Specifically, if <em class="replaceable"><code>vec</code></em> is a vector then:
 </div>
 
 <h1>Implementation</h1>
-<em>TODO - describe Kawa implementation</em>
+<p>
+The following describes how this API is implemented
+in <a href="https://www.gnu/orh/software/kawa">Kawa</a>.
+The implementation is a mix of Java and the Kawa dialect of Scheme.
+This overview should be enough to implement the specification,
+but studying the Kawa implementation adds useful detail.
+<!--
+The Kawa implementation has a number of extra methods
+to avoid object allocation, both of index vectors, and when
+extracting immediate values from uniform arrays.
+(There are also special classes and methods for vectors.)
+For simplicity, we will ignore those optimizations here,
+and assume all vectors and arrays are general object arrays.--></p>
+<p>
+A simple vector (the abstract class <code>SimpleVector</code>) is a wrapper
+around a simple fixed-size native array of the appropriate type.
+There are sub-classes for different element types:
+General (simple) vectors (the class <code>FVector</code> which
+extends <code>SimpleVector</code>) uses an object array (<code>Object[]</code>),
+while an F32 vector (the class <code>F32Vector</code>)
+uses an array of floats (a <code>float[]</code>).</p>
+<p>
+By default, there is a 1-to-1 mapping from the vector index
+to the index in the native array, but in some cases the
+mapping can be slightly more complex:
+A mutable vector may change its length, and this is implemented
+as a <a href="https://en.wikipedia.org/wiki/Gap_buffer">gap buffer</a>,
+so the index calculation must adjust for the unused elements in the gap.
+A slice (sub-vector) may share the underlying native array with another
+vector, so the index calculation must adjust for the start offset.</p>
+<p>
+Therefore we separate the index mapping logic
+(method <code>effectiveIndex</code>)
+from the code for accessing the native array (<code>getRaw</code>).
+Thus <code>(vector-ref vec i)</code> is implemented
+as <code>vec.get(i)</code>, which in turn is implemented as
+<code>vec.getRaw(vec.effectiveIndex(i))</code>.</p>
+<p>
+Mutating an element is similar:
+<code>(vector-set! vec i value)</code> is implemented
+as <code>vec.set(i, value)</code>, which in turn is implemented as
+<code>vec.setRaw(vec.effectiveIndex(i), value)</code>.
+In the following, for simplicity we'll mostly ignore mutation.</p>
+<p>
+The same logic is used for uniform vectors.
+An F32 vector (<code>F32Vector</code>) additionally has
+<code>getFloat</code> and <code>getFloatRaw</code> methods
+that return unboxed <code>float</code> values.
+The <code>vec.getFloat(i)</code> method is
+<code>vec.getFloatRaw(vec.effectiveIndex(i))</code>.
+If the compiler knows it is dealing with an F32 vector,
+it generates a call to <code>getFloat</code>, avoiding boxing.
+For simplicity we'll mostly ignore uniform vectors in the following,
+but non-vector arrays can be similarly optimized.</p>
+<p>
+All arrays (including vectors) implement the <code>Array</code> interface.
+The <code>get</code> method is generalized to take
+an array of indexes, but is still uses <code>effectiveIndex</code>,
+but generalized to take a vector of indexes (actually <code>int[]</code>,
+a native <code>int</code> array).
+Thus <code>arr.get(ivec)</code> is still
+<code>arr.getRaw(arr.effectiveIndex(ivec))</code>.</p>
+<p>
+With a few exceptions (such as the result of <code>build-array</code>)
+arrays that are not vectors are represented as
+transformations of other arrays, usually simple vectors,
+using the abstract class <code>TranformedArray</code>.
+In this case <code>getRaw</code> indirects to the base array:
+<code>arr.getRaw(effi)</code> is <code>arr.base.getRaw(effi)</code>,
+and therefore <code>arr.get(ivec)</code> is
+<code>arr.base.getRaw(arr.effectiveIndex(ivec))</code>.</p>
+<p>
+Both the <code>get</code> and <code>effectiveIndex</code> methods
+are overloaded to take 0, 1, 2, or <q>many</q> indexes.
+The is to avoid having to allocate an index array unncessarily,
+but in the following we'll ignore this optimization.</p>
+<p>
+A <code>GeneralArray</code> is a <code>TransformedArray</code>
+that takes a <code>base</code> array along with an <code>offset</code>
+and a <code>stride</code> vector.
+The <code>effectiveIndex</code> multiples each index by the
+corresponding <code>stride</code>, adds the <code>offset</code>, and then
+uses the result to call <code>effectiveIndex</code> on the <code>base</code>.
+A simple non-vector array, as allocated by the <code>make-array</code>
+or the <code>array</code> procedures returns a <code>GeneralArray</code>,
+using as the <code>base</code> a simple vector containing the
+elements in row-major order.
+The <code>share-array</code> procedure returns a <code>GeneralArray</code>.
+The bounds and strides are calculated from the <var>shape</var>
+and <var>proc</var>.
+If the argument <var>array</var> is a <code>GeneralArray</code>,
+the latter's <code>base</code> is used as an optimization.
+</p>
+<p>
+The general case of <code>array-index-share</code> returns
+a <code>ComposedArray</code>, which is a <code>TransformedArray</code>
+that has a reference to the index arrays as well as the base array.
+See the <code>resolve</code> method in <code>ComposedArray.java</code>
+for the calculation used by <code>effectiveIndex</code>.
+If all of the indexes are <q>linear</q> (simple integers or integer ranges)
+then the result is optimized to a <code>GeneralArray</code>.</p>
+The implementation of <code>array-index-ref</code> is basically
+doing <code>index-array-share</code> and then making a simple
+(<code>GeneralArray</code>) immutale copy of the result.
+However, there are some optimizations and special cases.
+To implement <code>index-array</code> we just
+wrap a <code>GeneralArray</code> around a simple range.</p>
+<p>
+The result of <code>array-transform</code> is a
+<code>ProcTransformedArray</code>, which is a <code>TransformedArray</code>
+that calls the supplied <var>transform</var> procedure
+in the <code>effectiveIndex</code> method.</p>
+<p>
+A <code>FlattenedArray</code> is used to implement
+<code>array-&gt;vector</code>.
+It is a <code>TransformedArray</code> whose <code>effectiveIndex</code>
+maps the argument index to the raw-major-order effective index
+of the <code>base</code> array.  If the argument array is a <q>simple</q>
+<code>GeneralArray</code> (that wrapes a <code>SimpleVector</code>)
+it returns the latter's <code>base</code>, as an optimization.
+The <code>array-reshape</code> procedure first creates a
+<code>FlattenedArray</code> from the argument, and then
+wraps that in a <code>GeneralArray</code>.
+Implementing <code>array-flatten</code> is just creating a fresh
+mutable vector (possible a uniform vector) and then copying the
+elements in row-major order.</p>
+<p>
+The <code>BuiltArray</code> class (which does <em>not</em> extend
+<code>TranformedArray</code>) is used to implement <code>build-array</code>
+by having <code>get</code> call the <var>procedure</var> on each access.
 
 <h1>Acknowledgements</h1>
 
