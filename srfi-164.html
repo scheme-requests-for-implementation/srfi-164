@@ -58,34 +58,6 @@ and other sources.
 It has been implemented in the
 <a href="https://www.gnu.org/software/kawa/Arrays.html">Kawa dialect of Scheme</a>.
 
-<h1>Issues</h1>
-<ul>
-<li>
-<em>The major issue is how to handle ranges.</em>
-The range API here is new and untested.  Some changes (including function names) may not make sense.
-It may make sense to move it into a separate SRFI.
-There is an existing range type in Kawa, but it uses special syntax.
-John Cowan has a <a href="https://bitbucket.org/cowan/r7rs-wg1-infra/src/e07902341b36e25959d2d18aa2e2233cddbf0d18/RangesCowan.md"> proposal for R7RS</a> but it is more of a sketch, as well as being rather large,
-It would be use to have some (non-Kawa way) to express pseudo-ranges,
-where only one bound is specified and the other depends on context.
-<li>
-Any important missing procedures?
-It might be useful to have <code>array-copy</code>,
-though <code>(array-copy arr)</code> is trivially
-defined as <code>(array-reshape (array-flatten arr) (array-shape arr))</code>.
-An <code>array-map</code> seems useful; APL-style "rank extension"
-may be useful but tricky.
-<li>
-The number of different ways a shape may be specified (see the <code>-&gt;shape</code> procedure) may be overkill.
-<li>
-What kind of index array can be passed to the <var>getter</var> and
-<var>setter</var> procedures of <code>build-array</code>?
-In the Kawa implementation they are <code>s32vector</code> arrays,
-rather than general vectors.
-<li>
-Some procedures should return immutable arrays.
-</ul>
-
 <h1>Rationale</h1>
 <p>
 This specification aims for compatibility with SRFI 25 and SRFI 4.
@@ -99,7 +71,7 @@ and is less concerned with compatibility with previous SRFIs.
 <li>SRFI 122 has a concept of <dfn>storage classes</dfn>.
 I believe uniform vectors subsume most of the need,
 and <code>build-array</code> with a <var>setter</var> argument
-can handle the result.
+can handle the rest.
 <li>SRFI 122 has a distinct <dfn>interval</dfn> type,
 which serves the purpose of the specification's <dfn>shape</dfn>.
 There are a number of potentially useful procedures for working with
@@ -130,17 +102,17 @@ to work on gvectors, but that is not required by this specification.
 <h3>Array values</h3>
 <p>
 <p>Arrays are heterogeneous data structures that generalize vectors to multiple
-indexes or dimensions.  Instead of a single integer index,
-there are multiple indexes:  An index is a vector of integers;
-the length of a valid index sequence
-is the rank or the number of dimensions of an array.
+indexes or dimensions.  The number of required indexes
+is the <dfn>rank</dfn> or the number of dimensions of an array.
+In addition, while for gvectors the lowest index is 0, we generalize
+this to allow any other exact integer to be the <dfn>lower bound</dfn>.
 <p>
 Arrays are an extension of gvectors:
 Every gvector is an array whose rank is 1, and
 where the (single) lower bound is 0.
 Conversely, an array whose rank is 1 and
 where the (single) lower bound is 0, is usually a gvector,
-but this is not required to always be the case. (<em>Should it be?</em>).
+but this is not required to always be the case.
 A library-based implementation of this specification <em>should</em> use
 the existing vector type
 for "simple" (see below) rank-1 zero-lower-bound arrays.
@@ -185,69 +157,71 @@ Note this also returns true for a (generalized) vector.
 </p></blockquote></div>
 
 <div class="sect2">
-<h3 id="Ranges">Ranges</h3>
-<em>This should/could be moved out to a separate SRFI.</em>
+<h3 id="Ranges">Ranges (non-normative)</h3>
 <p>
-A range has a lower bound, an upper bound, and a step that defaults to 1.
-It is a new type of immutable generalized vector with an optimized, compact representation.
+A <dfn>range</dfn> is an immutable linear sequence of values,
+defined in terms of a <var>start</var> value,
+the difference betwen successive elements or <var>step</var>,
+and an optional <var>length</var>.
+The range is <dfn>unbound</dfn> (non-finite) if <var>length</var> is missing.
+The <var>start</var> and <var>step</var> values
+are usually exact integers (and must be so when used for indexing),
+but generally can be any real numbers (or more generally taken
+from an enumerable set).
+The value of element <var>i</var>
+is <var>start + i * step</var>, as long as <var>i &lt; length</var>.
+It is strongly recommended (but not required) that there
+be a separate gvector type for ranges
+that only stores <var>length</var>, <var>step</var>, and <var>length</var>.
 <p>
-A <dfn>range</dfn> is an immutable sequence of values that increase <q>linearly,</q> i.e. by a fixed amount (the <dfn>step</dfn>)
-between each element.</p>
-<div kind="Procedure"><p class="synopsis"><code class="function">(range-from</code> <var>start</var> [<var>step</var>]<code>)</code><p>
-<blockquote class="blockquote"><p>Creates an <dfn>unbounded</dfn> or non-finite range, where <em>step</em> defaults to 1.
+Ranges are convenient way to specify slices and other regular array section.
+This specification does not define an API for ranges,
+but some of the later examples make use of the syntax for
+<a href="https://www.gnu.org/software/kawa/Ranges.html">Kawa ranges</a>,
+purely for illustrative purposes.
+We summarize this syntax here.
+</p>
+<div kind="Procedure">
+<p class="synopsis" kind="Procedure"><p class="synopsis"><code>[</code> <var>start</var> <var>[</var><code>by:</code> <var>step</var><var>]</var> <code>size:</code> <var>length</var><code>]</code>
+<blockquote><p>Create a range with the specified <var>start</var>,
+<var>step</var> (which defaults to 1), and <var>length</var>.
+The sequence of values is the same as SRFI 1's <code>(iota <var>count</var> <var>start</var> <var>step</var>)</code>.
+</p></blockquote>
+</div>
+<p>
+Instead of specifying a <var>length</var> directly, it is sometimes more
+convenient to specify a final value, or an upper/lower bound:
+<div kind="Procedure">
+<p class="synopsis" kind="Procedure"><p class="synopsis"><code>[</code> <var>start</var> <var>[</var><code>by:</code> <var>step</var><var>]</var> <code>&lt;:</code>  <var>end</var><code>]</code><p>
+<p class="synopsis" kind="Procedure"><p class="synopsis"><code>[</code> <var>start</var> <var>[</var><code>by:</code> <var>step</var><var>]</var> <code>&lt;=:</code>  <var>end</var><code>]</code>
+<blockquote><p>
+In these cases, the sequence counts up: The <em class="replaceable">step</em> must be positive, and defaults to 1.
+The implied <var>length</var> is the maximum such that
+all the values <var>x</var> satisfy <code class="literal">(&lt; <var>x</var> <var>end</var>)</code>,
+or <code class="literal">(&lt;= <var>x</var> <var>end</var>)</code>, respectively.
+</p>
+<p>
+To count down, use <code>&gt;:</code> or <code>&gt;=:</code>
+in place of <code>&lt;:</code> or <code>&lt;=:</code>,
+with <code>step:</code> defaulting to -1.
+</blockquote></div>
+</div>
+<p>
+If the <var>length</var> is unspecified,
+the result is an <dfn>unbounded</dfn> or non-finite range.
+When used for array indexing, they can be treated
+as a short-hand for a context-dependent length:
+The longest range such that the index values are valid.
+</p>
+<div kind="Procedure"><p class="synopsis"><code>[</code> <var>start</var> <code>&lt;:</code><code>]</code><p>
+<p class="synopsis"><code>[</code> <var>start</var> <code>by:</code> <var>step</var><code>]</code><p>
+<blockquote class="blockquote"><p>Creates an unbounded (non-finite) range, where <var>step</var> defaults to 1.
 The result is an infinite sequence of values, starting with <var>start</var>, and followed by
 <code class="literal">(+ <var>start</var> <var>step</var>)</code>,
 <code class="literal">(+ <var>start</var> (* 2 <var>step</var>))</code>, and so on.
-For example, <code>(range-from 3 2)</code> is the odd integers starting at 3.</p></blockquote></div>
-<div kind="Procedure"><p class="synopsis" kind="Procedure"><code class="function">(range&lt;</code> <var>end</var> [<var>start</var> [<var>step</var>]]<code>)</code></p>
-<p class="synopsis" kind="Procedure"><code class="function">(range&lt;=</code> <var>end</var> [<var>start</var> [<var>step</var>]]<code>)</code></p>
-<blockquote><p>
-In these cases, the sequence counts up: The <em class="replaceable">step</em> must be positive, and defaults to 1,
-while <em class="replaceable">start</em> defaults to 0.
-The resulting values are the initial subsequence of <code>(range-from <var>start</code> <var>step</var>)</code> as long as the value <var>x</var> satisfies <code class="literal">(&lt; <var>x</var> <var>end</var>)</code>,
-or <code class="literal">(&lt;= <var>x</var> <var>end</var>)</code>, respectively.
-<em>(Note: It might be more useful in the <code>range&lt;=</code> case for <em class="replaceable">start</em> to default to 1,
-but consistency is probably more desirable.)</em>
-</p></blockquote></div>
-<div kind="Procedure">
-<p class="synopsis"><code class="function">(range&gt;</code> <var>end</var> <var>start</var> [<var>step</var>]<code>)</code><p>
-<p class="synopsis"><code class="function">(range&gt;=</code> <var>end</var> <var>start</var> [<var>step</var>]<code>)</code><p>
-<blockquote class="blockquote"><p>
-In these cases, the sequence counts down: The <em class="replaceable"><code>step</code></em> must be negative, and defaults to -1.
-The resulting values are those  <var>x</var> such that <code class="literal">(&gt; <var>x</var> <var>end</var>)</code>,
-  or  <code class="literal">(&gt;= <em class="replaceable"><code>x</code></em> <em class="replaceable"><code>end</code></em>)</code>, respectively.
-<p/></blockquote>
-</div>
-<div kind="Procedure"><p class="synopsis" kind="Procedure"> <code class="function">(range-take</code> <var>count</var> [<var>start</var> [<var>step</var>]]<code>)</code></p>
-<blockquote><p>
-In this case, the resulting range is the first <var>count</var> elements of the unbounded sequence.
-The expression <code>(range-take <var>count</var> <var>start</var> <var>step</var>)</code>
-yields the same sequence as SRFI 1's <code>(iota <var>count</var> <var>start</var> <var>step</var>)</code>.
-</p></blockquote></div>
-<div kind="Procedure"><p class="synopsis" kind="Procedure"> <code class="function">(range-start</code> <var>range</var><code>)</code></p>
-<blockquote><p>Return the <var>start</var> value of the range.
-</p></blockquote></div>
-<div kind="Procedure"><p class="synopsis" kind="Procedure"> <code class="function">(range-step</code> <var>range</var><code>)</code></p>
-<blockquote><p>Return the <var>step</var> value of the range.
-</p></blockquote></div>
-<div kind="Procedure"><p class="synopsis" kind="Procedure"> <code class="function">(range-length</code> <var>range</var><code>)</code></p>
-<blockquote><p>Return the number of values (the <var>count</var>) of the range,
-if finite.  If unbounded, return <code>#f</code>.
-</p></blockquote></div><p>
-  <div kind="Procedure"><p class="synopsis" kind="Procedure"> <code class="function">(range-ref</code> <var>range</var> <var>index</var><code>)</code></p>
-<blockquote>
-<p>If is an error if <var>index</var> is not an exact non-negative integer, or
-if <code>(range-length <var>range</var>)</code>
-is an integer (not <code>#f</code>) and greater than or equal to <var>index</var>.
-Otherwise, returns <code>(+ <var>start</var> (* <var>index</var> </var>step</var>))</code>.
-</p></blockquote></div>
-<p>It is convenient but not required that standard vector procedures
-such as <code>vector-map</code> be extended to work on ranges.
-In that case, <code>vector-ref</code> on a range should be
-the same as <code>range-ref</code>.
-<p>This specification is based on <a href="https://www.gnu.org/software/kawa/Ranges.html">Kawa's range type</a>,
-though Kawa has a prettier syntax.
-</div>
+For example, <code>[3 by: 2]</code> is the odd integers starting at 3.</p></blockquote></div>
+<p>
+The syntax <code>[&lt;:]</code> or <code>[&gt;:]</code> is a <dfn>pseudo-range</dfn>.  The <var>start</var> value is implicit and context-dependent.
 
 <div class="sect2">
 <h3 id="Array-shape">Array shape</h3>
@@ -285,32 +259,29 @@ and a 3*4 array with lower bounds 1.
 <ul class="itemizedlist" style="list-style-type: disc; ">
 <li class="listitem"><p>A vector of simple integers.
 Each integer <em class="replaceable"><code>e</code></em> is an upper bound,
-and is equivalent to the range <code class="literal">(range&lt; <var>e</var>)</code>.
+with a zero lower bound.
+Equivalent to a range with start 0, step 1, and length <var>e</var>.
 <p>
 Examples: <code>#(2 3)</code>, and the second is not expressible.
 </p></li>
 <li class="listitem"><p>A vector of lists of length 2.
 The first element of each list is the lower bound, and the second is the upper bound.
-(This variant is not currently implemented in Kawa, but it seems a useful syntax.)
 <p>
 Examples: <code>#((0 2) (0 3))</code> and <code>#((1 3) (1 4))</code>.
 </p></li>
 <li class="listitem"><p>A vector of simple ranges, one for each
 dimension, all of which are
 bounded (finite), consist of integer values,
-and have a <em class="replaceable"><code>step</code></em> of 1.
-Each range, which is usually written as <code class="literal">(range&lt; <var>e</var> <var>b</var>)</code>
-or <code class="literal">(range&lt; <var>e</var>)</code>,
-    expresses the bounds of the corresponding dimension.
+and have a <var>step</var> of 1.
+Each range expresses the bounds of the corresponding dimension.
 <p>
-Examples: <code>(vector (range&lt; 2) (range&lt;= 2))</code> and <code>(vector (range&lt; 3 1) (range-take 4 1))</code>.
-<p>
-Using ranges without syntactic sugar can be a bit verbose.
-Using the Kawa syntactic sugar, the examples are: <code>[[0 &lt;: 2] [0 &lt;=: 2]]</code> and <code>[[1 &lt;: 3] [1 size: 4]]</code>.)
+Examples, using the Kawa syntactic sugar:
+<code>`#(,[0 &lt;: 2] ,[0 &lt;=: 2])</code> and
+<code>`#(,[1 &lt;: 3] ,[1 size: 4])</code>.
 </p></li>
 <li class="listitem"><p>A vector consisting of a mix of integers, length-2 lists, and ranges.
 <p>
-Examples:  <code>#(2 (0 3))</code> and <code>`#((1 3) ,(range 1 size: 4))</code>.
+Examples:  <code>#(2 (0 3))</code> and <code>`#((1 3) ,[1 size: 4])</code>.
 </p></li>
 <li class="listitem"><p>A canonical shape: A rank-2 array <em class="replaceable"><code>S</code></em> whose own shape is <code class="literal">#(<var>r</var> 2)</code>.
 For each dimension <em class="replaceable"><code>k</code></em>
@@ -452,8 +423,10 @@ value, but you can override specific elements.
 <div class="blockquote"><blockquote class="blockquote">
 <p>Return a new immutable array of the specified <em class="replaceable"><code>shape</code></em>
 where each element is the corresponding row-major index.
-Same as <code class="literal">(array-reshape (range-take <var>size</var>) <var>shape</var>)</code>
-where <em class="replaceable"><code>size</code></em> is the <code class="literal">array-size</code> of the resulting array.
+Same as <code class="literal">(array-reshape <var>r</var> <var>shape</var>)</code>
+  where <var>size</var> is the <code class="literal">array-size</code> of the resulting array, and
+<var>r</var> is a range whose <var>start</var> is 0, <var>step</var> is 1,
+and the same <var>size</var>.
 </p>
 <pre class="screen"><strong class="userinput"><code>(index-array #2a((1 3) (2 6)))</code></strong> &#x21e8;
 #2a@1:2@2:4
@@ -570,13 +543,20 @@ then the result is a vector:
 </pre>
 <p>Using ranges for index vectors selects a rectangular sub-matrix.
 </p>
-<pre class="screen"><strong class="userinput"><code>(array-index-ref arr (range&lt; 3 1) (range&lt; 4 1))</code></strong> &#x21e8;
+<pre class="screen"><strong class="userinput"><code>(array-index-ref arr [1 &lt;: 3] [1 &lt;: 4))</code></strong> ;; Kawa range syntax - non-normative
+&#x21e8;
 ╔#2a:2:3═╗
 ║11│12│13║
 ╟──┼──┼──╢
 ║21│22│23║
 ╚══╧══╧══╝
 </pre>
+<p>
+Using ranges makes for a convenient way to to express common <q>slice</q>
+operations while still keeping the API simple.
+Implementations are encouraged to optimize the case when all indexes
+are either integers or ranges.
+</p>
 <p>You can add new dimensions:
 </p>
 <pre class="screen"><strong class="userinput"><code>(array-index-ref arr #(2 1) #2a((3 1) (3 2)))</code></strong> &#x21e8;
@@ -590,7 +570,7 @@ then the result is a vector:
 ║13│12║
 ╚══╧══╝
 </pre>
-<p><em>FIX: Need alternate non-Kawa way to expression pseudo-ranges.</em>
+<p>
 The pseudo-range <code class="literal">[&lt;:]</code> can be used to select all the indexes
 along a dimension.  To select row 2 (1-origin):
 </p>
@@ -613,11 +593,13 @@ along a dimension.  To select row 2 (1-origin):
 ║33║
 ╚══╝
 </pre>
-<p>To expand that column to 5 columns you can repeat the column index:
+<p>You can also repeat a column by repeating its index.
+For example since <code>[3 by: 0 size: 5]</code> is
+equivalent to <code>#(3 3 3 3 3)</code> (though possibly more efficient),
+you can expand column 3 to 5 equal columns thus:
 </p>
-<pre class="screen"><strong class="userinput"><code>(range-take 5 3 0)</code></strong>
-#(3 3 3 3 3)
-<strong class="userinput"><code>(array-index-ref arr [&lt;:] (range-take 5 3 0))</code></strong> &#x21e8;
+<pre class="screen">
+<strong class="userinput"><code>(array-index-ref arr [&lt;:] [3 by: 0 size: 5])</code></strong> &#x21e8;
 ╔#2a:3:5═╤══╤══╗
 ║13│13│13│13│13║
 ╟──┼──┼──┼──┼──╢
@@ -628,6 +610,7 @@ along a dimension.  To select row 2 (1-origin):
 </pre>
 </blockquote></div>
 </div>
+
 <div class="sect2"><h3 class="title" id="Modifying-arrays">Modifying arrays</h3>
 <p class="synopsis" kind="Procedure"><code class="function">(<span class="proc-def">array-set!<span></code> <var>array</var> <var>k</var> <var>...</var> <var>obj</var><code>)</code></p>
 <p class="synopsis" kind="Procedure"><code class="function">(<span class="proc-def">array-set!</span></code> <var>array</var> <var>index</var> <var>obj</var><code>)</code></p>
@@ -899,7 +882,7 @@ Thus <code>arr.get(ivec)</code> is still
 With a few exceptions (such as the result of <code>build-array</code>)
 arrays that are not vectors are represented as
 transformations of other arrays, usually simple vectors,
-using the abstract class <code>TranformedArray</code>.
+using the abstract class <code>TransformedArray</code>.
 In this case <code>getRaw</code> indirects to the base array:
 <code>arr.getRaw(effi)</code> is <code>arr.base.getRaw(effi)</code>,
 and therefore <code>arr.get(ivec)</code> is
