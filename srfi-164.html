@@ -91,11 +91,11 @@ but if the implementation supports uniform vectors
 This specification assumes that a <dfn>range</dfn> is a gvector;
 ranges need a separate specification - see below.</p>
 <p>
-An implemention may provide other kinds of gvectors, or
+An implementation may provide other kinds of gvectors, or
 provide a mechanism to define new gvector types,
 but that is not part of this specification.</p>
 <p>
-An implemention may generalize standard vector procedures
+An implementation may generalize standard vector procedures
 such as <code>vector-ref</code> and <code>vector-length</code>
 to work on gvectors, but that is not required by this specification.
 </p>
@@ -161,7 +161,7 @@ Note this also returns true for a (generalized) vector.
 <p>
 A <dfn>range</dfn> is an immutable linear sequence of values,
 defined in terms of a <var>start</var> value,
-the difference betwen successive elements or <var>step</var>,
+the difference between successive elements or <var>step</var>,
 and an optional <var>length</var>.
 The range is <dfn>unbound</dfn> (non-finite) if <var>length</var> is missing.
 The <var>start</var> and <var>step</var> values
@@ -890,7 +890,7 @@ and therefore <code>arr.get(ivec)</code> is
 <p>
 Both the <code>get</code> and <code>effectiveIndex</code> methods
 are overloaded to take 0, 1, 2, or <q>many</q> indexes.
-The is to avoid having to allocate an index array unncessarily,
+The is to avoid having to allocate an index array unnecessarily,
 but in the following we'll ignore this optimization.</p>
 <p>
 A <code>GeneralArray</code> is a <code>TransformedArray</code>
@@ -919,7 +919,7 @@ If all of the indexes are <q>linear</q> (simple integers or integer ranges)
 then the result is optimized to a <code>GeneralArray</code>.</p>
 The implementation of <code>array-index-ref</code> is basically
 doing <code>index-array-share</code> and then making a simple
-(<code>GeneralArray</code>) immutale copy of the result.
+(<code>GeneralArray</code>) immutable copy of the result.
 However, there are some optimizations and special cases.
 To implement <code>index-array</code> we just
 wrap a <code>GeneralArray</code> around a simple range.</p>
@@ -934,7 +934,7 @@ A <code>FlattenedArray</code> is used to implement
 It is a <code>TransformedArray</code> whose <code>effectiveIndex</code>
 maps the argument index to the raw-major-order effective index
 of the <code>base</code> array.  If the argument array is a <q>simple</q>
-<code>GeneralArray</code> (that wrapes a <code>SimpleVector</code>)
+<code>GeneralArray</code> (that wraps a <code>SimpleVector</code>)
 it returns the latter's <code>base</code>, as an optimization.
 The <code>array-reshape</code> procedure first creates a
 <code>FlattenedArray</code> from the argument, and then
