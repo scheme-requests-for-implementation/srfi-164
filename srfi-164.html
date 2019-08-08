@@ -248,8 +248,8 @@ For convenience, the procedures in this specification that
 require a <em class="replaceable"><code>shape</code></em>
 can accept a <dfn>shape-specifier</dfn>, as if converted by
 the procedure <code>-&gt;shape</code>.
-For example <code>(array-rehape <var>array</var> <var>shape</var>)</code>
-is equivalent to <code>(array-rehape <var>array</var> (-&gt;shape <var>shape</var>))</code>.
+For example <code>(array-reshape <var>array</var> <var>shape</var>)</code>
+is equivalent to <code>(array-reshape <var>array</var> (-&gt;shape <var>shape</var>))</code>.
 <div kind="Procedure">
 <p class="synopsis" kind="Procedure"><code class="function">(<span class="proc-def" id="to-shape">-&gt;shape</span></code> <var>specifier</var><code>)</code></p>
 <blockquote><p>
@@ -723,7 +723,7 @@ the <code class="literal">array-index-ref</code> example):
 </pre>
 <p>The <code class="literal">array-transform</code> procedure is a generalization of <code class="literal">share-array</code>
 in that it does not require the <em class="replaceable"><code>transform</code></em> to be affine.
-Also note the different calling conversions for the <em class="replaceable"><code>tranform</code></em>:
+Also note the different calling conversions for the <em class="replaceable"><code>transform</code></em>:
 <code class="literal">array-transform</code> takes a single argument (a vector of indexes),
 and returns a single result (a vector of indexes);
 <code class="literal">share-array</code> takes one argument for each index, and returns
@@ -945,7 +945,7 @@ mutable vector (possible a uniform vector) and then copying the
 elements in row-major order.</p>
 <p>
 The <code>BuiltArray</code> class (which does <em>not</em> extend
-<code>TranformedArray</code>) is used to implement <code>build-array</code>
+<code>TransformedArray</code>) is used to implement <code>build-array</code>
 by having <code>get</code> call the <var>procedure</var> on each access.
 
 <h1>Copyright</h1>
