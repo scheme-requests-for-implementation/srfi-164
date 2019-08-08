@@ -101,7 +101,6 @@ such as <code>vector-ref</code> and <code>vector-length</code>
 to work on gvectors, but that is not required by this specification.
 </p>
 <h3>Array values</h3>
-<p>
 <p>Arrays are heterogeneous data structures that generalize vectors to multiple
 indexes or dimensions.  The number of required indexes
 is the <dfn>rank</dfn> or the number of dimensions of an array.
@@ -151,8 +150,7 @@ Typically (i.e. in many implementations), a simple array is a simple
 transformation (row-major order, as if using <code>array-reshape</code>) of an
 <dfn id="underlying-vector">underlying (simple) vector</dfn>.
 (The underlying vector of a simple vector is itself.)
-<p>
-<p class="synopsis" kind="Procedure"><code class="function">(array?</code> <var>obj</code></var>)</code></p>
+<p class="synopsis" kind="Procedure"><code class="function">(array?</code> <var>obj</var><code>)</code></p>
 <div class="blockquote"><blockquote class="blockquote"><p>Returns <code class="literal">#t</code> if <var>obj</var> is an array, otherwise returns <code class="literal">#f</code>.
 Note this also returns true for a (generalized) vector.
 </p></blockquote></div>
@@ -193,7 +191,7 @@ The sequence of values is the same as SRFI 1's <code>(iota <var>count</var> <var
 Instead of specifying a <var>length</var> directly, it is sometimes more
 convenient to specify a final value, or an upper/lower bound:
 <div kind="Procedure">
-<p class="synopsis" kind="Procedure"><p class="synopsis"><code>[</code> <var>start</var> <var>[</var><code>by:</code> <var>step</var><var>]</var> <code>&lt;:</code>  <var>end</var><code>]</code><p>
+<p class="synopsis" kind="Procedure"><p class="synopsis"><code>[</code> <var>start</var> <var>[</var><code>by:</code> <var>step</var><var>]</var> <code>&lt;:</code>  <var>end</var><code>]</code></p>
 <p class="synopsis" kind="Procedure"><p class="synopsis"><code>[</code> <var>start</var> <var>[</var><code>by:</code> <var>step</var><var>]</var> <code>&lt;=:</code>  <var>end</var><code>]</code>
 <blockquote><p>
 In these cases, the sequence counts up: The <em class="replaceable">step</em> must be positive, and defaults to 1.
@@ -214,8 +212,8 @@ When used for array indexing, they can be treated
 as a short-hand for a context-dependent length:
 The longest range such that the index values are valid.
 </p>
-<div kind="Procedure"><p class="synopsis"><code>[</code> <var>start</var> <code>&lt;:</code><code>]</code><p>
-<p class="synopsis"><code>[</code> <var>start</var> <code>by:</code> <var>step</var><code>]</code><p>
+<div kind="Procedure"><p class="synopsis"><code>[</code> <var>start</var> <code>&lt;:</code><code>]</code></p>
+<p class="synopsis"><code>[</code> <var>start</var> <code>by:</code> <var>step</var><code>]</code></p>
 <blockquote class="blockquote"><p>Creates an unbounded (non-finite) range, where <var>step</var> defaults to 1.
 The result is an infinite sequence of values, starting with <var>start</var>, and followed by
 <code class="literal">(+ <var>start</var> <var>step</var>)</code>,
@@ -225,7 +223,7 @@ For example, <code>[3 by: 2]</code> is the odd integers starting at 3.</p></bloc
 The syntax <code>[&lt;:]</code> or <code>[&gt;:]</code> is a <dfn>pseudo-range</dfn>.  The <var>start</var> value is implicit and context-dependent.
 
 <div class="sect2">
-<h3 id="Array-shape">Array shape</h3>
+<h3>Array shape</h3>
 <p>The <em class="firstterm">shape</em> of an array consists of bounds for each index.
 </p>
 <p>The lower bound <em class="replaceable"><code>b</code></em> and the upper bound <em class="replaceable"><code>e</code></em> of a dimension are
@@ -333,24 +331,24 @@ It is an error to attempt to modify the shape array.
 <p>Returns 2.
 </p>
 </blockquote></div>
-<p class="synopsis" kind="Procedure"><code class="function">(<span class="proc-def" id="array-start">array-start</code> <var>array</var> <var>k</var><code>)</code></p>
+<p class="synopsis" kind="Procedure"><code class="function">(<span class="proc-def" id="array-start">array-start</span></code> <var>array</var> <var>k</var><code>)</code></p>
 <div class="blockquote"><blockquote class="blockquote"><p>Returns the lower bound (inclusive) for the index along dimension <var>k</var>.
 This is most commonly 0.
 Same as <code>(array-ref (array-shape <var>array</var>) <var>k</var> 0)</code>.
 </p></blockquote></div>
-<p class="synopsis" kind="Procedure"><code class="function">(<span class="proc-def">array-end</span></code> <var>array</var> <var>k</var></code><code>)</code></p>
+<p class="synopsis" kind="Procedure"><code class="function">(<span class="proc-def">array-end</span></code> <var>array</var> <var>k</var><code>)</code></p>
 <div class="blockquote"><blockquote class="blockquote"><p>Returns the upper bound for the index along dimension <em class="replaceable"><code>k</code></em>.
 The bound is exclusive &mdash; i.e. the first integer higher
 than the last legal index.
 Same as <code>(array-ref (array-shape <var>array</var>) <var>k</var> 1)</code>.
 </p></blockquote></div>
-<p class="synopsis" kind="Procedure"><code class="function">(<span class="proc-def" id="array-size">array-size</span></code> <var>array</var><code.)</code><code>)</code></p>
+<p class="synopsis" kind="Procedure"><code class="function">(<span class="proc-def" id="array-size">array-size</span></code> <var>array</var><code>)</code><code>)</code></p>
 <div class="blockquote"><blockquote class="blockquote"><p>Return the total number of elements of <var>array</var>.
 This is the product of <code class="literal">(- (array-end <em class="replaceable"><code>array</code></em> <em class="replaceable"><code>k</code></em>) (array-start <em class="replaceable"><code>array</code></em> <em class="replaceable"><code>k</code></em>))</code> for every valid <em class="replaceable"><code>k</code></em>.
 </p></blockquote></div>
 </div>
 <div class="sect2">
-<h3 class="title" id="Array-construction"></a>Array construction</h3>
+<h3 class="title" id="Array-construction">Array construction</h3>
 <p>See also <a href="#array-reshape"><code class="literal">array-reshape</code></a>.
 </p>
 <p class="synopsis" kind="Procedure"><code class="function">(<span class="proc-def">array</span></code> <em class="replaceable"><code>shape</code></em> <var>obj</var> <var>...</var><code>)</code></p>
@@ -379,7 +377,7 @@ The array does not retain a reference to <em class="replaceable"><code>shape</co
 <p><span class="emphasis"><em>Compatibility:</em></span> Guile has an incompatible <code class="literal">make-array</code> procedure.
 </p>
 </blockquote></div>
-<p class="synopsis" kind="Procedure"><code class="function">(<span class="proc-def">build-array<span></code> <var>shape</var> <var>getter</var> [<var>setter</var>]<code>)</code></p>
+<p class="synopsis" kind="Procedure"><code class="function">(<span class="proc-def">build-array</span></code> <var>shape</var> <var>getter</var> [<var>setter</var>]<code>)</code></p>
 <div class="blockquote"><blockquote class="blockquote">
 <p>Construct a <q>virtual array</q> of the given <em class="replaceable"><code>shape</code></em> that uses no storage for the elements.
 Instead, elements are calculated on demand by calling <var>getter</var>,
@@ -613,7 +611,7 @@ you can expand column 3 to 5 equal columns thus:
 </div>
 
 <div class="sect2"><h3 class="title" id="Modifying-arrays">Modifying arrays</h3>
-<p class="synopsis" kind="Procedure"><code class="function">(<span class="proc-def">array-set!<span></code> <var>array</var> <var>k</var> <var>...</var> <var>obj</var><code>)</code></p>
+<p class="synopsis" kind="Procedure"><code class="function">(<span class="proc-def">array-set!</span></code> <var>array</var> <var>k</var> <var>...</var> <var>obj</var><code>)</code></p>
 <p class="synopsis" kind="Procedure"><code class="function">(<span class="proc-def">array-set!</span></code> <var>array</var> <var>index</var> <var>obj</var><code>)</code></p>
 <div class="blockquote"><blockquote class="blockquote">
 <p>Stores <em class="replaceable"><code>obj</code></em> in the element of <em class="replaceable"><code>array</code></em> at index <em class="replaceable"><code>k</code></em> ....
@@ -641,7 +639,7 @@ element in <var>src</var>.</p>
 <p><span class="emphasis"><em>Compatibility:</em></span> Guile has an <code class="literal">array-copy!</code> with the reversed
 argument order.
 </p></blockquote></div>
-<p class="synopsis" kind="Procedure"><code class="function">(<span class="proc-def">array-fill!<span></code> <var>array</> <var>value</var><code>)</code></p>
+<p class="synopsis" kind="Procedure"><code class="function">(<span class="proc-def">array-fill!</span></code> <var>array</var> <var>value</var><code>)</code></p>
 <div class="blockquote"><blockquote class="blockquote"><p>Set all the values <em class="replaceable"><code>array</code></em> to <em class="replaceable"><code>value</code></em>.
 You can use <code>(array-fill! (array-index-share <em class="replaceable"><code>array</code></em> <em class="replaceable"><code>indexes</code></em>...) <em class="replaceable"><code>value</code></em>)</code> to set a subset of the array.
 </p></blockquote></div>
@@ -739,7 +737,7 @@ that is a view of the selected element
 (unlike <code class="literal">array-index-ref</code>
 which would return the selected element directly).
 </p></blockquote></div>
-<p class="synopsis" kind="Procedure"><code class="function">(<span class="proc-def" id="array-reshape">array-reshape<span></code> <var>array</var> <var>shape</var>)</code></p>
+<p class="synopsis" kind="Procedure"><code class="function">(<span class="proc-def" id="array-reshape">array-reshape</span></code> <var>array</var> <var>shape</var><code>)</code></p>
 <div class="blockquote"><blockquote class="blockquote"><p>Creates a new array <em class="replaceable"><code>narray</code></em> of the given <em class="replaceable"><code>shape</code></em>,
 such that <code class="literal">(array-&gt;vector <em class="replaceable"><code>array</code></em>)</code> and
 <code class="literal">(array-&gt;vector <em class="replaceable"><code>narray</code></em>)</code> are equivalent.
@@ -918,7 +916,7 @@ See the <code>resolve</code> method in <code>ComposedArray.java</code>
 for the calculation used by <code>effectiveIndex</code>.
 If all of the indexes are <q>linear</q> (simple integers or integer ranges)
 then the result is optimized to a <code>GeneralArray</code>.</p>
-The implementation of <code>array-index-ref</code> is basically
+<p>The implementation of <code>array-index-ref</code> is basically
 doing <code>index-array-share</code> and then making a simple
 (<code>GeneralArray</code>) immutable copy of the result.
 However, there are some optimizations and special cases.
